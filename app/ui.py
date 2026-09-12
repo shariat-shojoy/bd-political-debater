@@ -242,6 +242,10 @@ def main():
             st.rerun()
         return
 
+    if "stage_debate_path" in st.session_state:
+        _show_live_stage(st.session_state["stage_debate_path"])
+        return
+
     tab_start, tab_open = st.tabs(["Start new debate", "Open saved"])
 
     with tab_start:
@@ -315,6 +319,14 @@ def _run_debate(topic: str, synth: bool) -> None:
 
         status.update(label="Debate complete!", state="complete")
 
+    # ─── Watch as live animation ───
+    st.divider()
+    st.markdown("### 🎬 Watch as live animation")
+    st.caption("Open the 2-character debate stage: two cartoon avatars, audio-synced mouth movement, speech bubbles with citations.")
+    if st.button("▶ Open live debate stage", type="primary", key="open_stage_after_debate"):
+        st.session_state["stage_debate_path"] = str(save_path)
+        st.rerun()
+
     # Render all turns
     st.divider()
     st.subheader("Debate transcript")
@@ -383,7 +395,7 @@ def _show_saved_debate(path_str: str) -> None:
     with open(p, "r", encoding="utf-8") as f:
         debate = json.load(f)
 
-    st.title(f"🇧🇳 Saved debate")
+    st.title(f"🇧🇩 Saved debate")
     st.write(f"**Topic**: {debate.get('topic','')}")
     st.write(f"**Created**: {debate.get('created_at','')}")
 
@@ -392,9 +404,40 @@ def _show_saved_debate(path_str: str) -> None:
     if not audio_dir.exists():
         audio_dir = None
 
+    # ─── Live animation button ───
     st.divider()
+    st.markdown("### 🎬 Live debate animation")
+    st.caption("Two cartoon characters seated across a stage, with audio-synced mouth animation and speech bubbles. Auto-advances through all 4 turns.")
+    col_a, col_b = st.columns([1, 4])
+    if col_a.button("▶ Open live stage", type="primary"):
+        st.session_state["stage_debate_path"] = str(p)
+        st.rerun()
+    if col_b.button("▶ Generate audio first (if missing)"):
+        from app.tts.synth import synth_debate_audio
+        with st.status("Synthesising Bangla audio…"):
+            try:
+                synth_debate_audio(p, audio_dir or (p.parent / (p.stem + "_audio")), provider="mms")
+                st.success("Audio synthesised!")
+            except Exception as e:
+                st.error(f"TTS failed: {e}")
+        st.rerun()
+
+    st.divider()
+    st.markdown("### 📄 Turn-by-turn transcript")
     for turn in debate.get("turns", []):
         render_turn(turn, audio_dir=audio_dir)
+
+
+def _show_live_stage(path_str: str) -> None:
+    """Full-screen live 2-character debate stage."""
+    from app.debate_stage import render_debate_stage
+    p = Path(path_str)
+    audio_dir = p.parent / (p.stem + "_audio")
+    render_debate_stage(p, audio_dir)
+    st.divider()
+    if st.button("← Back to transcript"):
+        del st.session_state["stage_debate_path"]
+        st.rerun()
 
 
 if __name__ == "__main__":
