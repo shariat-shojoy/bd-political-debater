@@ -25,6 +25,9 @@ from typing import Any
 
 import yaml
 
+# Make project root importable when this file is run as a script.
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from app._paths import BASE_DIR, CONFIG_PATH
 
 

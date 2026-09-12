@@ -34,6 +34,12 @@ from typing import Any
 
 import yaml
 
+# Make project root importable when this file is run as a script:
+#   python app/agents/debate.py ...
+# When run as a script, Python only puts app/agents/ on sys.path, so
+# `from app._paths import ...` fails. We add the project root manually.
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from app._paths import BASE_DIR, CONFIG_PATH
 
 
