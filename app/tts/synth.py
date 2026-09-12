@@ -27,8 +27,9 @@ from typing import Any
 
 import yaml
 
-BASE_DIR = Path("/home/z/my-project")
-CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from app._paths import BASE_DIR, CONFIG_PATH
 
 
 def load_config() -> dict[str, Any]:

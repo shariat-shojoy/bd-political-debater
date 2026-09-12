@@ -30,8 +30,11 @@ from typing import Any
 
 import yaml
 
-BASE_DIR = Path("/home/z/my-project")
-CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
+# app/rag/embeddings.py lives at <root>/app/rag/embeddings.py
+# Go up 3 levels to reach the project root, then up 1 more for the import level
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from app._paths import BASE_DIR, CONFIG_PATH, RAW_DIR, PROCESSED_DIR, VECTORSTORE_DIR
 
 
 def load_config() -> dict[str, Any]:

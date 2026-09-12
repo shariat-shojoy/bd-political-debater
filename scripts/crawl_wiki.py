@@ -38,7 +38,7 @@ import yaml
 from tqdm import tqdm
 
 
-BASE_DIR = Path("/home/z/my-project")
+BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
 
 WIKI_API = "https://{lang}.wikipedia.org/w/api.php"

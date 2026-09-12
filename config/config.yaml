@@ -5,12 +5,14 @@
 project:
   name: "Bangladesh Political Debater"
   version: "0.1.0"
-  base_dir: "/home/z/my-project"
-  data_dir: "/home/z/my-project/data"
-  raw_dir: "/home/z/my-project/data/raw"
-  processed_dir: "/home/z/my-project/data/processed"
-  vectorstore_dir: "/home/z/my-project/data/vectorstore"
-  logs_dir: "/home/z/my-project/logs"
+  # Paths are resolved relative to the project root at runtime via app/_paths.py.
+  # Leaving these here for reference / overrides only.
+  base_dir: "."
+  data_dir: "data"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  vectorstore_dir: "data/vectorstore"
+  logs_dir: "logs"
 
 # ===== Phase 1: Corpus sources =====
 corpus:
@@ -243,9 +245,9 @@ tts:
 animation:
   engine: "sadtalker"
   # Two static portrait images (to be supplied)
-  avatar_a_image: "/home/z/my-project/assets/analyst_avatar.png"
-  avatar_b_image: "/home/z/my-project/assets/journalist_avatar.png"
-  output_dir: "/home/z/my-project/data/animations"
+  avatar_a_image: "assets/analyst_avatar.png"
+  avatar_b_image: "assets/journalist_avatar.png"
+  output_dir: "data/animations"
   enhancer: "gfpgan"  # face enhancement post-processing
 
 # ===== Phase 6: UI =====

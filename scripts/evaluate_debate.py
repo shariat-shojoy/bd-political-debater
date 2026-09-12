@@ -23,7 +23,7 @@ For a saved debate transcript JSON, computes:
 Outputs a JSON scorecard per turn + overall averages.
 
 Usage:
-    python /home/z/my-project/scripts/evaluate_debate.py /home/z/my-project/download/debate_1975_coup.json
+    python scripts/evaluate_debate.py download/debate_1975_coup.json
 """
 from __future__ import annotations
 

@@ -33,12 +33,10 @@ from pathlib import Path
 from typing import Any
 
 # Ensure project root is on sys.path
-sys.path.insert(0, "/home/z/my-project")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app._paths import BASE_DIR, CONFIG_PATH
 
 import streamlit as st
-
-BASE_DIR = Path("/home/z/my-project")
-CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
 
 
 # ---- Helpers ----
