@@ -1,0 +1,49 @@
+# Environment / tooling (not part of the project)
+skills/
+node_modules/
+upload/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets — never commit
+.env
+.env.local
+.env.production
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs (auto-generated, not source)
+logs/*.log
+logs/*.log.*
+
+# HuggingFace + model caches
+.cache/
+.huggingface/
+
+# SadTalker (cloned as submodule on user's GPU machine)
+SadTalker/
+
+# Generated artifacts (keep these — they're the deliverables, but ignore re-runs)
+/tmp/

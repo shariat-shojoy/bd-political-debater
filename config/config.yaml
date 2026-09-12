@@ -1,0 +1,263 @@
+# ============================================================
+# Bangladesh Political Debater System - Configuration
+# ============================================================
+
+project:
+  name: "Bangladesh Political Debater"
+  version: "0.1.0"
+  base_dir: "/home/z/my-project"
+  data_dir: "/home/z/my-project/data"
+  raw_dir: "/home/z/my-project/data/raw"
+  processed_dir: "/home/z/my-project/data/processed"
+  vectorstore_dir: "/home/z/my-project/data/vectorstore"
+  logs_dir: "/home/z/my-project/logs"
+
+# ===== Phase 1: Corpus sources =====
+corpus:
+  # Wikipedia: crawl both Bangla (bn) and English (en) editions
+  wikipedia_languages: ["bn", "en"]
+  # How many backlinks/related articles to follow per seed article
+  max_related_depth: 1
+  max_related_per_article: 5
+  # Wikipedia API polite crawling
+  user_agent: "BDPoliticalDebater/0.1 (research; contact: researcher@local)"
+  request_delay_seconds: 0.5
+  
+  # Bangla political events 1971-today (seed article lists)
+  # Each event period maps to a list of Wikipedia article titles in both languages
+  # These are seeds; the crawler will also follow "What links here" + related articles
+  event_periods:
+    liberation_1971:
+      label: "1971 Liberation War"
+      year_range: [1971, 1972]
+      seed_articles_en:
+        - "Bangladesh Liberation War"
+        - "Operation Searchlight"
+        - "1971 Bangladesh genocide"
+        - "Mukti Bahini"
+        - "Mujibnagar Government"
+        - "Proclamation of Bangladeshi Independence"
+        - "Indo-Pakistani War of 1971"
+        - "Sheikh Mujibur Rahman"
+        - "Blood Telegram"
+        - "International Crimes Tribunal (Bangladesh)"
+      seed_articles_bn:
+        - "বাংলাদেশের স্বাধীনতা যুদ্ধ"
+        - "অপারেশন সার্চলাইট"
+        - "বাংলাদেশের গণহত্যা"
+        - "মুক্তিবাহিনী"
+        - "মুজিবনগর সরকার"
+        - "স্বাধীনতার ঘোষণা"
+        - "শেখ মুজিবুর রহমান"
+        - "ভারত-পাকিস্তান যুদ্ধ ১৯৭১"
+
+    coups_1975:
+      label: "1975 Coups"
+      year_range: [1975, 1976]
+      seed_articles_en:
+        - "15 August 1975 Bangladesh coup d'état"
+        - "Assassination of Sheikh Mujibur Rahman"
+        - "7 November 1975 Bangladesh coup d'état"
+        - "Khondaker Mostaq Ahmad"
+        - "Jail Killing Day"
+        - "Bangladesh Krishak Sramik Awami League"
+        - "BAKSAL"
+      seed_articles_bn:
+        - "১৫ আগস্ট ১৯৭৫ বাংলাদেশের অভ্যুত্থান"
+        - "শেখ মুজিবুর রহমানের হত্যাকাণ্ড"
+        - "৭ নভেম্বর ১৯৭৫ বাংলাদেশের অভ্যুত্থান"
+        - "খন্দকার মোশতাক আহমেদ"
+        - "জেল হত্যা দিবস"
+        - "বাকশাল"
+
+    zia_era_1977_81:
+      label: "Zia Era 1977-1981"
+      year_range: [1977, 1981]
+      seed_articles_en:
+        - "Ziaur Rahman"
+        - "Bangladesh Nationalist Party"
+        - "Assassination of Ziaur Rahman"
+        - "Justice Sattar"
+        - "Islamization in Bangladesh"
+        - "1977 Bangladesh coup attempt"
+        - "Upazila"
+      seed_articles_bn:
+        - "জিয়াউর রহমান"
+        - "বাংলাদেশ জাতীয়তাবাদী দল"
+        - "জিয়াউর রহমানের হত্যা"
+        - "আবদুস সাত্তার (রাষ্ট্রপতি)"
+        - "বাংলাদেশে ইসলামীকরণ"
+        - "উপজেলা"
+
+    ershad_1982_90:
+      label: "Ershad Era 1982-1990"
+      year_range: [1982, 1990]
+      seed_articles_en:
+        - "Hussain Muhammad Ershad"
+        - "1982 Bangladesh coup d'état"
+        - "Jatiya Party"
+        - "Eighth Amendment to the Constitution of Bangladesh"
+        - "1990 Mass Uprising in Bangladesh"
+        - "District Council"
+      seed_articles_bn:
+        - "হুসেইন মুহাম্মদ এরশাদ"
+        - "১৯৮২ বাংলাদেশের অভ্যুত্থান"
+        - "জাতীয় পার্টি"
+        - "বাংলাদেশের সংবিধানের অষ্টম সংশোধনী"
+        - "১৯৯০ গণঅভ্যুত্থান"
+
+    democracy_1990s:
+      label: "1990s Democracy"
+      year_range: [1991, 2000]
+      seed_articles_en:
+        - "1991 Bangladeshi general election"
+        - "1996 Bangladeshi general election"
+        - "Caretaker government of Bangladesh"
+        - "Khaleda Zia"
+        - "Sheikh Hasina"
+        - "Bangladesh Awami League"
+        - "One-Eleven (Bangladesh)"
+        - "Farakka Barrage"
+      seed_articles_bn:
+        - "১৯৯১ বাংলাদেশের সাধারণ নির্বাচন"
+        - "১৯৯৬ বাংলাদেশের সাধারণ নির্বাচন"
+        - "তত্ত্বাবধায়ক সরকার"
+        - "খালেদা জিয়া"
+        - "শেখ হাসিনা"
+        - "বাংলাদেশ আওয়ামী লীগ"
+
+    crisis_2000s_1_11:
+      label: "2000s and 1/11/2007"
+      year_range: [2001, 2008]
+      seed_articles_en:
+        - "2001 Bangladeshi general election"
+        - "2006-2008 Bangladeshi political crisis"
+        - "Fakhruddin Ahmed caretaker government"
+        - "Anti-Corruption Commission Bangladesh"
+        - "Bangladesh Rifles mutiny"
+        - "2008 Bangladeshi general election"
+      seed_articles_bn:
+        - "২০০১ বাংলাদেশের সাধারণ নির্বাচন"
+        - "২০০৬-২০০৮ বাংলাদেশের রাজনৈতিক সংকট"
+        - "ফখরুদ্দিন আহমেদের তত্ত্বাবধায়ক সরকার"
+        - "দুর্নীতি দমন কমিশন"
+        - "বিডিআর বিদ্রোহ"
+        - "২০০৮ বাংলাদেশের সাধারণ নির্বাচন"
+
+    al_rule_2010s:
+      label: "AL Rule 2010s"
+      year_range: [2009, 2023]
+      seed_articles_en:
+        - "International Crimes Tribunal (Bangladesh)"
+        - "2014 Bangladeshi general election"
+        - "2018 Bangladeshi general election"
+        - "Rana Plaza collapse"
+        - "Shahbagh movement"
+        - "Abdul Quader Molla"
+        - "Digital Security Act (Bangladesh)"
+        - "Padma Bridge"
+        - "2013 Bangladeshi general election"
+      seed_articles_bn:
+        - "আন্তর্জাতিক অপরাধ ট্রাইব্যুনাল"
+        - "২০১৪ বাংলাদেশের সাধারণ নির্বাচন"
+        - "২০১৮ বাংলাদেশের সাধারণ নির্বাচন"
+        - "রানা প্লাজা ধস"
+        - "শাহবাগ আন্দোলন"
+        - "ডিজিটাল নিরাপত্তা আইন"
+        - "পদ্মা সেতু"
+
+    quota_2024_now:
+      label: "2024 Quota Movement and Aftermath"
+      year_range: [2024, 2026]
+      seed_articles_en:
+        - "2024 Bangladesh quota reform movement"
+        - "July massacre in Bangladesh"
+        - "Fall of the Sheikh Hasina administration"
+        - "Muhammad Yunus interim government"
+        - "Bangladesh Jamiatul Ansar Fil Hind Al Sharqiya"
+        - "Students Against Discrimination"
+        - "2024 Bangladesh floods"
+      seed_articles_bn:
+        - "২০২৪ বাংলাদেশ কোটা সংস্কার আন্দোলন"
+        - "জুলাই হত্যাকাণ্ড"
+        - "শেখ হাসিনা সরকারের পতন"
+        - "মুহাম্মদ ইউনূসের অন্তর্বর্তীকালীন সরকার"
+        - "বৈষম্যবিরোধী ছাত্র আন্দোলন"
+
+# ===== Phase 2: RAG config =====
+rag:
+  # BGE-M3 is the production model (1024-dim, best multilingual)
+  # For dev on CPU, switch to paraphrase-multilingual-MiniLM-L12-v2 (384-dim, 120MB)
+  embedding_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  embedding_dim: 384
+  chunk_size: 500
+  chunk_overlap: 80
+  # Hybrid retrieval
+  bm25_weight: 0.4
+  vector_weight: 0.6
+  top_k: 8
+  rerank_top_k: 4
+
+# ===== Phase 3: Debate engine =====
+debate:
+  # GPT-OSS-120B via Groq — best Bangla + reasoning in available options
+  llm_provider: "groq"
+  llm_model: "openai/gpt-oss-120b"
+  fallback_model: "qwen2.5-14b-instruct"  # local via Ollama
+  temperature: 0.7
+  max_tokens_per_turn: 600
+  
+  # Debate structure - 4 turns each
+  structure:
+    - "opening"
+    - "rebuttal"
+    - "counter_rebuttal"
+    - "closing"
+  
+  # Agent personas
+  agent_a:
+    name: "বিশ্লেষক"  # "Analyst"
+    name_en: "Analyst"
+    persona: |
+      আপনি একজন রাজনৈতিক বিশ্লেষক, যিনি সরকারের পক্ষে যুক্তি দেন।
+      আপনি প্রাতিষ্ঠানিক দৃষ্টিকোণ থেকে কথা বলেন — স্থিতিশীলতা, অর্থনীতি,
+      আইনশৃঙ্খল রাষ্ট্র, সাংবিধানিক ধারাবাহিকতা ইত্যাদি বিষয়ে জোর দেন।
+      তথ্য-প্রমাণ ভিত্তিক কথা বলেন, আবেগের চেয়ে যুক্তিকে প্রাধান্য দেন।
+  agent_b:
+    name: "সাংবাদিক"  # "Journalist"
+    name_en: "Journalist"
+    persona: |
+      আপনি একজন তদন্তমূলক সাংবাদিক, যিনি সরকারের সমালোচনামূলক দৃষ্টিকোণ থেকে কথা বলেন।
+      মানবাধিকার লঙ্ঘন, দুর্নীতি, ক্ষমতার অপব্যবহার, নিপীড়ন ইত্যাদি বিষয়ে সবিশেষ নজর দেন।
+      আপনি সরকারী বক্তব্যকে প্রশ্ন করেন, বিকল্প সূত্র উদ্ঘৃত করেন, এবং
+      প্রান্তিক ও বঞ্চিত মানুষের অভিজ্ঞতাকে সামনে আনেন।
+
+# ===== Phase 4: TTS =====
+tts:
+  # Facebook MMS-TTS for Bangla (best open option)
+  model: "facebook/mms-tts-ben"
+  fallback_model: "facebook/mms-tts-eng"
+  sample_rate: 24000
+
+# ===== Phase 5: Animation =====
+animation:
+  engine: "sadtalker"
+  # Two static portrait images (to be supplied)
+  avatar_a_image: "/home/z/my-project/assets/analyst_avatar.png"
+  avatar_b_image: "/home/z/my-project/assets/journalist_avatar.png"
+  output_dir: "/home/z/my-project/data/animations"
+  enhancer: "gfpgan"  # face enhancement post-processing
+
+# ===== Phase 6: UI =====
+ui:
+  host: "0.0.0.0"
+  port: 8501
+  default_topic: "১৯৭৫ সালের ১৫ আগস্ট অভ্যুত্থান কি বাংলাদেশের রাজনীতিতে একটি মোড় ঘুরিয়ে দিয়েছিল?"
+
+# ===== Zenodo config =====
+zenodo:
+  # Will be filled when you provide a Zenodo API token
+  api_url: "https://zenodo.org/api/deposit/depositions"
+  access_token: ""
+  # Will create one deposition per corpus snapshot
+  community: "bangladesh-political-history"

@@ -1,0 +1,34 @@
+[
+  {
+    "turn_index": 0,
+    "agent": "analyst",
+    "audio_path": "/home/z/my-project/data/audio/debate_1975_coup/turn_00_analyst.wav",
+    "duration_seconds": 68.64,
+    "provider": "mms",
+    "text_chars": 718
+  },
+  {
+    "turn_index": 1,
+    "agent": "journalist",
+    "audio_path": "/home/z/my-project/data/audio/debate_1975_coup/turn_01_journalist.wav",
+    "duration_seconds": 79.936,
+    "provider": "mms",
+    "text_chars": 840
+  },
+  {
+    "turn_index": 2,
+    "agent": "analyst",
+    "audio_path": "/home/z/my-project/data/audio/debate_1975_coup/turn_02_analyst.wav",
+    "duration_seconds": 78.544,
+    "provider": "mms",
+    "text_chars": 886
+  },
+  {
+    "turn_index": 3,
+    "agent": "journalist",
+    "audio_path": "/home/z/my-project/data/audio/debate_1975_coup/turn_03_journalist.wav",
+    "duration_seconds": 76.752,
+    "provider": "mms",
+    "text_chars": 855
+  }
+]

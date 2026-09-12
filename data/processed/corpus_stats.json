@@ -1,0 +1,38 @@
+{
+  "total_articles": 108,
+  "total_chunks": 2785,
+  "unique_chunks": 2785,
+  "by_period": {
+    "al_rule_2010s": 324,
+    "coups_1975": 317,
+    "crisis_2000s_1_11": 170,
+    "democracy_1990s": 380,
+    "ershad_1982_90": 158,
+    "liberation_1971": 795,
+    "quota_2024_now": 299,
+    "zia_era_1977_81": 342
+  },
+  "by_lang": {
+    "bn": 1155,
+    "en": 1630
+  },
+  "by_period_lang": {
+    "al_rule_2010s_bn": 113,
+    "al_rule_2010s_en": 211,
+    "coups_1975_bn": 146,
+    "coups_1975_en": 171,
+    "crisis_2000s_1_11_bn": 59,
+    "crisis_2000s_1_11_en": 111,
+    "democracy_1990s_bn": 146,
+    "democracy_1990s_en": 234,
+    "ershad_1982_90_bn": 90,
+    "ershad_1982_90_en": 68,
+    "liberation_1971_bn": 327,
+    "liberation_1971_en": 468,
+    "quota_2024_now_bn": 110,
+    "quota_2024_now_en": 189,
+    "zia_era_1977_81_bn": 164,
+    "zia_era_1977_81_en": 178
+  },
+  "avg_chunk_chars": 866.8035906642729
+}
