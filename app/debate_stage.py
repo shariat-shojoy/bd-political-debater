@@ -34,11 +34,49 @@ from app._paths import BASE_DIR
 
 
 def _encode_audio(path: Path | None) -> str:
-    """Return base64-encoded audio data URI string (or empty string if missing)."""
+    """Return base64-encoded audio data URI string (or empty string if missing).
+
+    Auto-converts WAV to MP3 using ffmpeg for ~10x smaller payload.
+    Caches the MP3 next to the WAV (so subsequent loads are instant).
+    Falls back to WAV if ffmpeg isn't available.
+    """
     if not path or not path.exists():
         return ""
-    b64 = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:audio/wav;base64,{b64}"
+
+    # If this is already an mp3, use it directly
+    if path.suffix.lower() == ".mp3":
+        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+        return f"data:audio/mpeg;base64,{b64}"
+
+    # For WAV files: prefer a cached MP3 if it exists, else convert on-the-fly
+    mp3_path = path.with_suffix(".mp3")
+    if not mp3_path.exists():
+        import subprocess
+        import shutil
+        if not shutil.which("ffmpeg"):
+            # No ffmpeg — fall back to raw WAV base64 (larger payload but works)
+            b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+            return f"data:audio/wav;base64,{b64}"
+        try:
+            subprocess.run(
+                [
+                    "ffmpeg", "-y", "-i", str(path),
+                    "-codec:a", "libmp3lame",
+                    "-b:a", "64k",   # 64 kbps is fine for speech
+                    "-ar", "22050",  # downsample to 22kHz (speech doesn't need 44.1kHz)
+                    str(mp3_path),
+                ],
+                check=True,
+                capture_output=True,
+                timeout=60,
+            )
+        except Exception:
+            # Conversion failed — fall back to WAV
+            b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+            return f"data:audio/wav;base64,{b64}"
+
+    b64 = base64.b64encode(mp3_path.read_bytes()).decode("ascii")
+    return f"data:audio/mpeg;base64,{b64}"
 
 
 def _encode_video(path: Path | None) -> str:
@@ -363,14 +401,29 @@ let connectedAudios = new Set();  // tracks which audios are already wired to an
 // Pre-create audio + video elements
 PAYLOAD.turns.forEach((turn, i) => {
   if (turn.audio_uri) {
-    const audio = new Audio(turn.audio_uri);
-    audioElements[i] = audio;
+    try {
+      const audio = new Audio();
+      audio.onerror = function(e) {
+        dbg('Audio element ERROR for turn ' + (i+1) + ': ' + (e.target.error ? e.target.error.message : 'unknown'), 'err');
+      };
+      audio.addEventListener('canplaythrough', function() {
+        dbg('Audio turn ' + (i+1) + ' ready to play (canplaythrough)');
+      });
+      // Don't preload all at once - just set src
+      audio.src = turn.audio_uri;
+      audio.preload = 'auto';
+      audio.load();  // start loading
+      audioElements[i] = audio;
+      dbg('Audio element created for turn ' + (i+1) + ', src size=' + Math.round(turn.audio_uri.length / 1024) + 'KB');
+    } catch (e) {
+      dbg('Audio creation EXCEPTION for turn ' + (i+1) + ': ' + e.message, 'err');
+    }
+  } else {
+    dbg('Turn ' + (i+1) + ' has NO audio_uri - will be skipped during playback', 'warn');
   }
   if (turn.video_uri) {
-    // Two video elements (one per character) that can play the same source
     const vAnalyst = document.getElementById('video-analyst');
     const vJournalist = document.getElementById('video-journalist');
-    // Determine which character this video belongs to
     if (turn.agent === 'analyst') {
       vAnalyst.src = turn.video_uri;
     } else {
@@ -735,11 +788,20 @@ def render_debate_stage(debate_path: str | Path, audio_dir: str | Path | None = 
                 has_videos = True
 
     # Total payload size estimate (so user knows it's loading)
-    total_bytes = sum(p.stat().st_size for p in audio_paths.values() if p)
+    # Audio will be MP3-encoded inside the HTML (~10x smaller than WAV)
+    total_bytes = 0
+    for p in audio_paths.values():
+        if p and p.exists():
+            mp3 = p.with_suffix(".mp3")
+            # Use mp3 size if already converted, else estimate mp3 = ~10% of wav
+            if mp3.exists():
+                total_bytes += mp3.stat().st_size
+            else:
+                total_bytes += p.stat().st_size // 10  # rough mp3 estimate
     if has_videos:
         total_bytes += sum(p.stat().st_size for p in video_paths.values() if p)
     total_mb = total_bytes / (1024 * 1024)
-    st.caption(f"📦 Payload: {total_mb:.1f} MB (audio + videos) - may take a few seconds to load")
+    st.caption(f"📦 Payload: ~{total_mb:.1f} MB (audio as MP3 + any videos) - may take a few seconds to load")
 
     # Build the HTML payload
     html = _build_stage_html(debate, audio_paths, video_paths if has_videos else None)
