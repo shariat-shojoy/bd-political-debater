@@ -185,6 +185,24 @@ def _build_stage_html(debate: dict, audio_paths: dict[int, Path], video_paths: d
   .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
   .progress { color: #FFD93D; padding: 8px 16px; font-size: 13px; min-width: 200px; text-align: center; }
   .turn-info { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+  /* Stage loaded indicator */
+  .loaded-badge {
+    position: fixed; top: 12px; right: 12px;
+    background: #4CAF50; color: white; padding: 4px 12px;
+    border-radius: 12px; font-size: 11px; font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  /* Debug console */
+  .debug-console {
+    position: fixed; bottom: 80px; right: 12px;
+    background: rgba(0,0,0,0.9); color: #0F0; padding: 10px 14px;
+    border-radius: 8px; font-family: monospace; font-size: 11px;
+    max-width: 400px; max-height: 180px; overflow-y: auto;
+    display: none;
+  }
+  .debug-console.show { display: block; }
+  .debug-console .err { color: #F44; }
+  .debug-console .warn { color: #FC0; }
   /* Bottom source panel */
   .sources {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
@@ -286,11 +304,52 @@ def _build_stage_html(debate: dict, audio_paths: dict[int, Path], video_paths: d
     <button id="next-btn">⏭</button>
     <span class="progress" id="progress">তৈরি হচ্ছে…</span>
     <button id="src-btn">📚 সূত্র দেখুন</button>
+    <button id="dbg-btn">🐞 Debug</button>
   </div>
 </div>
 
+<!-- Loaded indicator -->
+<div class="loaded-badge" id="loaded-badge" style="display:none;">✓ STAGE LOADED</div>
+
+<!-- Debug console -->
+<div class="debug-console" id="debug-console"></div>
+
 <script>
 const PAYLOAD = """ + payload_json + """;
+
+// Debug logger
+function dbg(msg, level) {
+  const console_ = document.getElementById('debug-console');
+  if (!console_) return;
+  const line = document.createElement('div');
+  if (level) line.className = level;
+  const ts = new Date().toLocaleTimeString();
+  line.textContent = '[' + ts + '] ' + msg;
+  console_.appendChild(line);
+  console_.scrollTop = console_.scrollHeight;
+  // Also log to browser console
+  if (level === 'err') console.error(msg);
+  else if (level === 'warn') console.warn(msg);
+  else console.log(msg);
+}
+
+// Show loaded badge + initial debug
+window.addEventListener('load', function() {
+  document.getElementById('loaded-badge').style.display = 'block';
+  dbg('Stage DOM loaded');
+  dbg('Payload turns: ' + PAYLOAD.turns.length);
+  PAYLOAD.turns.forEach(function(turn, i) {
+    dbg('Turn ' + (i+1) + ' [' + turn.agent + '/' + turn.phase + ']: ' +
+        'audio=' + (turn.audio_uri ? 'YES (' + Math.round(turn.audio_uri.length / 1024) + 'KB)' : 'NO') +
+        ', video=' + (turn.video_uri ? 'YES' : 'NO') +
+        ', text=' + turn.text.length + ' chars');
+  });
+});
+
+// Toggle debug console
+document.getElementById('dbg-btn').addEventListener('click', function() {
+  document.getElementById('debug-console').classList.toggle('show');
+});
 
 let currentTurnIdx = 0;
 let isPlaying = false;
@@ -455,10 +514,12 @@ async function playTurn(idx) {
     isPlaying = false;
     document.getElementById('play-btn').textContent = '↻ আবার চালান';
     document.getElementById('progress').innerHTML = '<strong>🎉 বিতর্ক শেষ</strong>';
+    dbg('Debate ended.');
     return;
   }
   currentTurnIdx = idx;
   setSpeaking(idx);
+  dbg('Playing turn ' + (idx+1) + ' (' + PAYLOAD.turns[idx].agent + '/' + PAYLOAD.turns[idx].phase + ')');
 
   const turn = PAYLOAD.turns[idx];
   const audio = audioElements[idx];
@@ -468,22 +529,26 @@ async function playTurn(idx) {
   if (turn.video_uri && speakerVideo) {
     speakerVideo.currentTime = 0;
     speakerVideo.muted = true;
-    try { await speakerVideo.play(); } catch (e) {}
+    try { await speakerVideo.play(); dbg('  Video playing for ' + turn.agent); } catch (e) { dbg('  Video play failed: ' + e.message, 'err'); }
+  } else {
+    dbg('  No video for this turn (will use SVG + audio)');
   }
 
   if (!audio) {
-    // No audio — wait 3s then next
+    dbg('  NO AUDIO for this turn - skipping after 3s', 'warn');
     setTimeout(() => { if (isPlaying) playTurn(idx + 1); }, 3000);
     return;
   }
 
   ensureAudioGraph(audio);
   if (audioCtx.state === 'suspended') {
+    dbg('  AudioContext suspended - resuming');
     await audioCtx.resume();
   }
 
   audio.currentTime = 0;
   audio.onended = () => {
+    dbg('  Audio ended for turn ' + (idx+1));
     stopMouthAnimation();
     if (turn.video_uri && speakerVideo) {
       speakerVideo.pause();
@@ -494,11 +559,13 @@ async function playTurn(idx) {
   };
 
   startMouthAnimation(turn.agent);
+  dbg('  Starting mouth animation');
 
   try {
     await audio.play();
+    dbg('  Audio playing OK');
   } catch (e) {
-    console.error('Audio play failed:', e);
+    dbg('  Audio play FAILED: ' + e.message, 'err');
     stopMouthAnimation();
   }
 }
@@ -591,6 +658,62 @@ def render_debate_stage(debate_path: str | Path, audio_dir: str | Path | None = 
         audio_dir = debate_path.parent / (debate_path.stem + "_audio")
     audio_dir = Path(audio_dir)
 
+    # Pre-flight check: count available audio + video files
+    audio_files_found = []
+    audio_files_missing = []
+    for turn in debate["turns"]:
+        idx = turn["turn_index"]
+        agent = turn["agent"]
+        p = audio_dir / f"turn_{idx:02d}_{agent}.wav"
+        if p.exists():
+            audio_files_found.append(p.name)
+        else:
+            audio_files_missing.append(p.name)
+
+    anim_dir = debate_path.parent / (debate_path.stem + "_anim")
+    video_files_found = []
+    if anim_dir.exists():
+        for turn in debate["turns"]:
+            idx = turn["turn_index"]
+            agent = turn["agent"]
+            p = anim_dir / f"turn_{idx:02d}_{agent}.mp4"
+            if p.exists():
+                video_files_found.append(p.name)
+
+    # ---------- Diagnostic banner ----------
+    st.markdown("### 🎬 Live debate stage")
+    st.caption(f"Debate: `{debate_path.name}`")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if audio_files_found:
+            st.success(f"✅ Audio: {len(audio_files_found)}/{len(debate['turns'])} turns")
+        else:
+            st.error(f"❌ Audio: 0/{len(debate['turns'])} turns")
+    with col2:
+        if video_files_found:
+            st.success(f"✅ SadTalker MP4s: {len(video_files_found)}/{len(debate['turns'])} turns")
+        else:
+            st.info("ℹ️ SadTalker MP4s: none (will use SVG cartoon)")
+
+    # If no audio at all, show a clear actionable error
+    if not audio_files_found:
+        st.error(
+            f"❌ **Cannot play stage — no audio files found.**\n\n"
+            f"Expected at: `{audio_dir}`\n\n"
+            f"Missing files: `{', '.join(audio_files_missing)}`\n\n"
+            f"**Fix — run this in PowerShell:**\n"
+            f"```\n"
+            f"python app/tts/synth.py "
+            f"--debate {debate_path} "
+            f"--out {audio_dir} "
+            f"--provider mms\n"
+            f"```"
+        )
+        if st.button("🔄 I've generated audio — reload stage", type="primary"):
+            st.rerun()
+        return
+
     # Build per-turn audio path map
     audio_paths: dict[int, Path] = {}
     for turn in debate["turns"]:
@@ -599,9 +722,8 @@ def render_debate_stage(debate_path: str | Path, audio_dir: str | Path | None = 
         p = audio_dir / f"turn_{idx:02d}_{agent}.wav"
         audio_paths[idx] = p if p.exists() else None
 
-    # Look for SadTalker videos (optional — Phase 5 upgrade)
+    # Look for SadTalker videos (optional - Phase 5 upgrade)
     video_paths: dict[int, Path] = {}
-    anim_dir = debate_path.parent / (debate_path.stem + "_anim")
     has_videos = False
     if anim_dir.exists():
         for turn in debate["turns"]:
@@ -612,16 +734,12 @@ def render_debate_stage(debate_path: str | Path, audio_dir: str | Path | None = 
                 video_paths[idx] = p
                 has_videos = True
 
-    # Header
-    st.markdown(f"### 🎬 Live debate stage")
-    st.caption(f"Source: `{debate_path.name}` • Audio: `{audio_dir.name}`" +
-               (f" • Videos: `{anim_dir.name}`" if has_videos else ""))
-
+    # Total payload size estimate (so user knows it's loading)
+    total_bytes = sum(p.stat().st_size for p in audio_paths.values() if p)
     if has_videos:
-        st.success("✅ SadTalker videos detected — using realistic talking heads for each turn.")
-    else:
-        st.info("ℹ️ No SadTalker videos found — using animated SVG cartoon characters with audio-synced mouth movement. "
-                "To enable realistic talking heads, install SadTalker and run `python -m app.animation.animate_turn`.")
+        total_bytes += sum(p.stat().st_size for p in video_paths.values() if p)
+    total_mb = total_bytes / (1024 * 1024)
+    st.caption(f"📦 Payload: {total_mb:.1f} MB (audio + videos) - may take a few seconds to load")
 
     # Build the HTML payload
     html = _build_stage_html(debate, audio_paths, video_paths if has_videos else None)
